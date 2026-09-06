@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00453C">
+<title>Stock &amp; Gana — Tablero</title>
+<style>
+  :root{
+    --tinta:#00453C; --tinta-med:#00685C; --verde:#009881; --verde-suave:#E4F2EE;
+    --papel:#F1F4F3; --blanco:#fff; --gris:#5C6B68; --linea:#D8E2DF;
+    --ambar:#A45B00; --ambar-suave:#FBF0E0; --rojo:#B3261E; --rojo-suave:#FBEAE9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; font-family:Arial, Helvetica, sans-serif; background:var(--papel); color:#12211E; font-size:14px}
+  header{
+    background:var(--tinta); color:#fff; padding:14px 22px; display:flex; align-items:center;
+    gap:16px; flex-wrap:wrap; position:sticky; top:0; z-index:30;
+  }
+  header h1{font-size:17px; margin:0; font-weight:bold}
+  header h1 span{display:block; font-size:12px; font-weight:normal; opacity:.75}
+  header .der{margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .sello{font-size:12px; opacity:.8}
+  .punto{width:8px; height:8px; border-radius:50%; background:#6FE3C4; display:inline-block; margin-right:6px}
+
+  select, input, button{font-family:inherit; font-size:14px}
+  header select, header input{
+    padding:7px 10px; border-radius:7px; border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.12); color:#fff;
+  }
+  header select option{color:#12211E}
+  header input::placeholder{color:rgba(255,255,255,.6)}
+  .btn{padding:8px 14px; border-radius:7px; border:0; background:var(--verde); color:#fff; cursor:pointer; font-weight:bold}
+  .btn.claro{background:rgba(255,255,255,.16)}
+
+  main{padding:22px; max-width:1500px; margin:0 auto}
+
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:22px}
+  .kpi{background:#fff; border:1px solid var(--linea); border-radius:10px; padding:16px}
+  .kpi .rot{font-size:12px; color:var(--gris); margin-bottom:6px}
+  .kpi .val{font-size:28px; font-weight:bold; color:var(--tinta); line-height:1.1}
+  .kpi .pie{font-size:12px; color:var(--gris); margin-top:5px}
+  .kpi.alerta .val{color:var(--rojo)}
+
+  .pestanas{display:flex; gap:4px; border-bottom:2px solid var(--linea); margin-bottom:18px; flex-wrap:wrap}
+  .pestanas button{
+    background:none; border:0; padding:11px 18px; cursor:pointer; font-size:14px; color:var(--gris);
+    border-bottom:3px solid transparent; margin-bottom:-2px;
+  }
+  .pestanas button.act{color:var(--tinta); font-weight:bold; border-bottom-color:var(--verde)}
+
+  .tarjeta{background:#fff; border:1px solid var(--linea); border-radius:10px; overflow:hidden}
+  table{width:100%; border-collapse:collapse}
+  th{
+    text-align:left; font-size:12px; color:var(--gris); font-weight:bold; padding:11px 14px;
+    border-bottom:1px solid var(--linea); background:#F8FAF9; position:sticky; top:64px; z-index:5;
+  }
+  td{padding:11px 14px; border-bottom:1px solid var(--linea); vertical-align:middle}
+  tr:last-child td{border-bottom:0}
+  tbody tr.clic{cursor:pointer}
+  tbody tr.clic:hover{background:var(--verde-suave)}
+  td.num, th.num{text-align:right; font-variant-numeric:tabular-nums}
+
+  .eti{display:inline-block; font-size:11px; padding:3px 8px; border-radius:20px; white-space:nowrap}
+  .eti.ok{background:var(--verde-suave); color:var(--tinta)}
+  .eti.no{background:var(--ambar-suave); color:var(--ambar)}
+  .eti.pen{background:#EBEFEE; color:var(--gris)}
+  .eti.mal{background:var(--rojo-suave); color:var(--rojo)}
+  .eti.m{background:var(--verde); color:#fff; font-weight:bold}
+
+  .miniaturas{display:flex; gap:6px}
+  .miniaturas img, .sinfoto{
+    width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid var(--linea); cursor:pointer; background:#EBEFEE;
+  }
+  .sinfoto{display:flex; align-items:center; justify-content:center; color:var(--gris); font-size:16px; cursor:default}
+
+  .vacio{padding:44px; text-align:center; color:var(--gris)}
+  .barra{height:6px; background:#EBEFEE; border-radius:4px; overflow:hidden; min-width:70px}
+  .barra i{display:block; height:100%; background:var(--verde)}
+
+  /* Panel de detalle */
+  .fondo{position:fixed; inset:0; background:rgba(4,26,22,.55); z-index:50; display:flex; justify-content:flex-end}
+  .panel{background:var(--papel); width:min(760px,100%); height:100%; overflow-y:auto; padding:24px}
+  .panel h2{margin:0 0 4px; font-size:19px; color:var(--tinta)}
+  .panel .sub{color:var(--gris); margin:0 0 20px}
+  .panel section{background:#fff; border:1px solid var(--linea); border-radius:10px; padding:16px; margin-bottom:16px}
+  .panel section h3{margin:0 0 12px; font-size:14px}
+  .cerrar{position:absolute; top:18px; right:22px; background:#fff; border:1px solid var(--linea);
+    width:34px; height:34px; border-radius:8px; font-size:18px; cursor:pointer}
+  .galeria{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px}
+  .galeria figure{margin:0}
+  .galeria img{width:100%; height:120px; object-fit:cover; border-radius:8px; border:1px solid var(--linea); cursor:pointer}
+  .galeria figcaption{font-size:11px; color:var(--gris); margin-top:4px}
+
+  .lupa{position:fixed; inset:0; background:rgba(4,26,22,.9); z-index:60; display:flex; align-items:center;
+    justify-content:center; padding:24px; flex-direction:column; gap:14px}
+  .lupa img{max-width:100%; max-height:82vh; border-radius:8px}
+  .lupa a{color:#9FE8D3; font-size:13px}
+
+  .aviso{background:var(--ambar-suave); color:var(--ambar); padding:12px 16px; border-radius:8px; margin-bottom:18px}
+  .acceso{max-width:420px; margin:80px auto; background:#fff; border:1px solid var(--linea); border-radius:12px; padding:26px}
+  .acceso h2{margin:0 0 6px; color:var(--tinta); font-size:18px}
+  .acceso p{color:var(--gris); margin:0 0 18px}
+  .acceso input{width:100%; padding:12px; border:1px solid var(--linea); border-radius:8px; margin-bottom:12px}
+  .acceso .btn{width:100%; padding:13px}
+  .oculto{display:none !important}
+  @media (max-width:700px){
+    main{padding:14px} th{position:static} .panel{padding:16px}
+    table{font-size:13px} td, th{padding:9px 10px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Stock &amp; Gana<span>Tablero de relevo en campo</span></h1>
+  <div class="der" id="controles">
+    <select id="periodo">
+      <option value="0">Hoy</option>
+      <option value="6">Últimos 7 días</option>
+      <option value="29" selected>Últimos 30 días</option>
+      <option value="365">Todo</option>
+    </select>
+    <select id="fMercado"><option value="">Todos los mercados</option></select>
+    <select id="fMerc"><option value="">Todos los mercaderistas</option></select>
+    <button class="btn claro" id="btnRefrescar">Actualizar</button>
+    <span class="sello" id="sello"><span class="punto"></span>—</span>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<script>
+/* ============ Configuración ============ */
+const URL_BACKEND = 'https://script.google.com/macros/s/AKfycbytJH_iXnHILtr_NaOSHXZt90TRyLkEomDIcbjrdb3okyjJKpjHuQRhc3DAL1Cayj2g/exec';
+const REFRESCO_MS = 60000;
+
+const Guardado = (function(){
+  let mem = {}, ok = true;
+  try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); }catch(e){ ok = false; }
+  return { get: k => { try{ return ok ? localStorage.getItem(k) : mem[k]; }catch(e){ return mem[k]; } },
+           set: (k,v) => { try{ ok ? localStorage.setItem(k,v) : (mem[k]=v); }catch(e){ mem[k]=v; } } };
+})();
+
+let clave = Guardado.get('clave_tablero') || '';
+let D = null;              // datos crudos del backend
+let vista = 'visitas';
+let seleccion = null;
+let cargando = false;
+
+/* ============ Utilidades ============ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const soles = n => 'S/ ' + (Number(n)||0).toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:2});
+const pct = n => (Number(n)||0).toLocaleString('es-PE',{style:'percent', maximumFractionDigits:0});
+const num = n => (Number(n)||0).toLocaleString('es-PE');
+
+function fechaDesde(dias){
+  const d = new Date(); d.setDate(d.getDate() - Number(dias));
+  return d.toISOString().slice(0,10);
+}
+
+/** Convierte el enlace de Drive en una miniatura visible desde el navegador. */
+function foto(url, ancho){
+  if(!url || String(url).indexOf('drive.google') < 0) return '';
+  const m = String(url).match(/[-\w]{25,}/);
+  return m ? 'https://drive.google.com/thumbnail?id=' + m[0] + '&sz=w' + (ancho||600) : '';
+}
+
+function jsonp(url){
+  return new Promise((resolve, reject) => {
+    const cb = 'cbTab' + Date.now();
+    const et = document.createElement('script');
+    const limpiar = () => { delete window[cb]; et.remove(); };
+    const reloj = setTimeout(() => { limpiar(); reject(new Error('tiempo agotado')); }, 30000);
+    window[cb] = d => { clearTimeout(reloj); limpiar(); resolve(d); };
+    et.onerror = () => { clearTimeout(reloj); limpiar(); reject(new Error('sin respuesta del servidor')); };
+    et.src = url + '&callback=' + cb;
+    document.body.appendChild(et);
+  });
+}
+
+/* ============ Carga ============ */
+async function cargar(silencioso){
+  if(!clave){ pintarAcceso(); return; }
+  if(cargando) return;
+  cargando = true;
+  $('sello').innerHTML = '<span class="punto"></span>Actualizando…';
+  try{
+    const desde = fechaDesde($('periodo').value);
+    const d = await jsonp(URL_BACKEND + '?recurso=datos&clave=' + encodeURIComponent(clave) + '&desde=' + desde + '&t=' + Date.now());
+    if(!d.ok){
+      if(String(d.error).includes('Clave')){ clave = ''; Guardado.set('clave_tablero',''); pintarAcceso('La clave no coincide con la del Apps Script.'); return; }
+      throw new Error(d.error);
+    }
+    D = d;
+    llenarFiltros();
+    pintar();
+    $('sello').innerHTML = '<span class="punto"></span>Actualizado ' + d.actualizado.slice(11,16);
+  }catch(e){
+    $('sello').innerHTML = '<span class="punto" style="background:#F2A65A"></span>Sin conexión';
+    if(!silencioso) $('app').innerHTML = '<div class="aviso">No se pudo leer la data: ' + esc(e.message) +
+      '. Verifica que la implementación del Apps Script tenga acceso para "Cualquier persona" y que la clave sea la correcta.</div>';
+  }finally{ cargando = false; }
+}
+
+function pintarAcceso(msg){
+  $('controles').classList.add('oculto');
+  $('app').innerHTML = `<div class="acceso">
+    <h2>Acceso al tablero</h2>
+    <p>Ingresa la clave configurada en <code>CLAVE_TABLERO</code> del Apps Script.</p>
+    ${msg ? '<div class="aviso">'+esc(msg)+'</div>' : ''}
+    <input type="password" id="cl" placeholder="Clave" autocomplete="current-password">
+    <button class="btn" id="entrar">Entrar</button></div>`;
+  $('entrar').onclick = () => {
+    const v = $('cl').value.trim();
+    if(!v) return;
+    clave = v; Guardado.set('clave_tablero', v);
+    $('controles').classList.remove('oculto');
+    cargar();
+  };
+  $('cl').onkeydown = e => { if(e.key === 'Enter') $('entrar').click(); };
+}
+
+function llenarFiltros(){
+  const rellenar = (id, valores, etiqueta) => {
+    const sel = $(id), actual = sel.value;
+    sel.innerHTML = '<option value="">' + etiqueta + '</option>' +
+      [...new Set(valores)].filter(Boolean).sort().map(v => `<option ${v===actual?'selected':''}>${esc(v)}</option>`).join('');
+  };
+  rellenar('fMercado', D.visitas.map(v => v.MERCADO), 'Todos los mercados');
+  rellenar('fMerc', D.visitas.map(v => v.MERCADERISTA), 'Todos los mercaderistas');
+}
+
+/* ============ Filtro común ============ */
+function pasa(f){
+  const m = $('fMercado').value, p = $('fMerc').value;
+  return (!m || f.MERCADO === m) && (!p || f.MERCADERISTA === p);
+}
+const visitas  = () => (D.visitas  || []).filter(pasa);
+const relevos  = () => (D.relevos  || []).filter(pasa);
+const boletas  = () => (D.boletas  || []).filter(pasa);
+
+/* ============ Render ============ */
+function pintar(){
+  const V = visitas(), R = relevos(), B = boletas();
+  const mand = Number(D.mandatorios) || 0;
+
+  const clientesVisitados = new Set(V.map(v => v.COD_CLIENTE)).size;
+  const efectivas = V.filter(v => v.VISITA_EFECTIVA === 'SI').length;
+  const cumpl = V.filter(v => v.EST_EXHIBICION === 'COMPLETO');
+  const pctMand = cumpl.length && mand
+    ? cumpl.reduce((t,v) => t + (Number(v.MAND_EXHIB_OK)||0), 0) / (cumpl.length * mand) : 0;
+  const quiebres = R.filter(r => r.TIPO_RELEVO === 'EXHIBICION' && r.ESTADO_SKU === 'QUIEBRE').length;
+  const monto = B.reduce((t,b) => t + (Number(b.TOTAL)||0), 0);
+  const noRelevados = (D.modulos||[]).filter(pasa).filter(m => m.ESTADO === 'NO_RELEVADO').length;
+
+  $('app').innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="rot">Visitas registradas</div><div class="val">${num(V.length)}</div>
+        <div class="pie">${clientesVisitados} de ${D.clientes} clientes de la cartera</div></div>
+      <div class="kpi"><div class="rot">Visitas efectivas</div><div class="val">${num(efectivas)}</div>
+        <div class="pie">${V.length ? pct(efectivas/V.length) : '—'} del total</div></div>
+      <div class="kpi"><div class="rot">Portafolio mandatorio en exhibición</div><div class="val">${cumpl.length ? pct(pctMand) : '—'}</div>
+        <div class="pie">Sobre ${mand} SKU obligatorios</div></div>
+      <div class="kpi ${quiebres?'alerta':''}"><div class="rot">Quiebres en exhibición</div><div class="val">${num(quiebres)}</div>
+        <div class="pie">SKU contados en cero</div></div>
+      <div class="kpi"><div class="rot">Boletas relevadas</div><div class="val">${num(B.length)}</div>
+        <div class="pie">${soles(monto)} en portafolio</div></div>
+      <div class="kpi"><div class="rot">Módulos no relevados</div><div class="val">${num(noRelevados)}</div>
+        <div class="pie">Con motivo registrado</div></div>
+    </div>
+
+    <div class="pestanas">
+      <button data-v="visitas" class="${vista==='visitas'?'act':''}">Visitas</button>
+      <button data-v="productos" class="${vista==='productos'?'act':''}">Productos relevados</button>
+      <button data-v="boletas" class="${vista==='boletas'?'act':''}">Boletas</button>
+      <button data-v="motivos" class="${vista==='motivos'?'act':''}">No relevados</button>
+    </div>
+
+    <div class="tarjeta" id="contenido"></div>`;
+
+  document.querySelectorAll('.pestanas button').forEach(b => b.onclick = () => { vista = b.dataset.v; pintar(); });
+  ({visitas: tablaVisitas, productos: tablaProductos, boletas: tablaBoletas, motivos: tablaMotivos})[vista]();
+  if(seleccion) panelDetalle(seleccion);
+}
+
+/* ---- Visitas ---- */
+function tablaVisitas(){
+  const V = visitas().slice().sort((a,b) => (b.FECHA+b.HORA).localeCompare(a.FECHA+a.HORA));
+  const mand = Number(D.mandatorios) || 1;
+  if(!V.length) return vacio('Sin visitas en el periodo seleccionado.');
+  const eti = e => e === 'COMPLETO' ? '<span class="eti ok">Relevado</span>'
+    : e === 'NO_RELEVADO' ? '<span class="eti no">No relevado</span>' : '<span class="eti pen">Pendiente</span>';
+
+  $('contenido').innerHTML = `<table><thead><tr>
+      <th>Fecha</th><th>Cliente</th><th>Mercado</th><th>Mercaderista</th>
+      <th>Almacén</th><th>Exhibición</th><th>Boletas</th><th>Mandatorio</th><th class="num">Monto</th><th>Fotos</th>
+    </tr></thead><tbody>${V.map(v => `
+      <tr class="clic" data-id="${esc(v.ID_VISITA)}">
+        <td>${esc(v.FECHA)}<br><small style="color:var(--gris)">${esc(String(v.HORA).slice(0,5))}</small></td>
+        <td><b>${esc(v.CLIENTE)}</b><br><small style="color:var(--gris)">${esc(v.COD_CLIENTE)}</small></td>
+        <td>${esc(v.MERCADO)}</td>
+        <td>${esc(v.MERCADERISTA)}</td>
+        <td>${eti(v.EST_ALMACEN)}</td>
+        <td>${eti(v.EST_EXHIBICION)}</td>
+        <td>${eti(v.EST_BOLETA)}</td>
+        <td><div class="barra"><i style="width:${Math.round((Number(v.MAND_EXHIB_OK)||0)/mand*100)}%"></i></div>
+          <small style="color:var(--gris)">${v.MAND_EXHIB_OK||0}/${mand}</small></td>
+        <td class="num">${Number(v.MONTO_BOLETAS) ? soles(v.MONTO_BOLETAS) : '—'}</td>
+        <td>${miniaturas([[v.FOTO_ALMACEN,'Almacén'],[v.FOTO_EXHIBICION,'Exhibición']])}</td>
+      </tr>`).join('')}</tbody></table>`;
+
+  document.querySelectorAll('tbody tr.clic').forEach(tr => tr.onclick = e => {
+    if(e.target.tagName === 'IMG') return;
+    seleccion = tr.dataset.id; panelDetalle(seleccion);
+  });
+  conectarLupa();
+}
+
+/* ---- Productos ---- */
+function tablaProductos(){
+  const R = relevos().filter(r => r.TIPO_RELEVO !== 'BOLETA');
+  if(!R.length) return vacio('Sin productos relevados en el periodo.');
+  const mapa = {};
+  R.forEach(r => {
+    const k = r.COD_SKU;
+    mapa[k] = mapa[k] || {cod:k, desc:r.DESCRIPCION, marca:r.MARCA, rel:r.RELEVANCIA,
+      alm:0, exh:0, ptosAlm:0, ptosExh:0, quiebre:0};
+    const u = Number(r.UNIDADES)||0;
+    if(r.TIPO_RELEVO === 'ALMACEN'){ mapa[k].alm += u; mapa[k].ptosAlm++; }
+    else { mapa[k].exh += u; mapa[k].ptosExh++; if(u === 0) mapa[k].quiebre++; }
+  });
+  const compras = {};
+  relevos().filter(r => r.TIPO_RELEVO === 'BOLETA').forEach(r => {
+    const c = compras[r.COD_SKU] = compras[r.COD_SKU] || {u:0, v:0};
+    c.u += Number(r.UNIDADES)||0; c.v += Number(r.VALOR)||0;
+  });
+
+  const filas = Object.values(mapa).sort((a,b) => b.quiebre - a.quiebre || b.exh - a.exh);
+  $('contenido').innerHTML = `<table><thead><tr>
+      <th>SKU</th><th>Producto</th><th>Marca</th>
+      <th class="num">Und. almacén</th><th class="num">Und. exhibición</th>
+      <th class="num">PDV en quiebre</th><th class="num">Precio promedio</th>
+    </tr></thead><tbody>${filas.map(f => `
+      <tr>
+        <td>${esc(f.cod)}</td>
+        <td>${f.rel === 'MANDATORIO' ? '<span class="eti m">M</span> ' : ''}${esc(f.desc)}</td>
+        <td>${esc(f.marca)}</td>
+        <td class="num">${num(f.alm)}<br><small style="color:var(--gris)">${f.ptosAlm} PDV</small></td>
+        <td class="num">${num(f.exh)}<br><small style="color:var(--gris)">${f.ptosExh} PDV</small></td>
+        <td class="num">${f.quiebre ? '<span class="eti mal">'+f.quiebre+'</span>' : '—'}</td>
+        <td class="num">${compras[f.cod] && compras[f.cod].u ? soles(compras[f.cod].v / compras[f.cod].u) : '—'}</td>
+      </tr>`).join('')}</tbody></table>`;
+}
+
+/* ---- Boletas ---- */
+function tablaBoletas(){
+  const B = boletas().slice().sort((a,b) => String(b.FECHA_BOLETA).localeCompare(String(a.FECHA_BOLETA)));
+  if(!B.length) return vacio('Sin boletas relevadas en el periodo.');
+  $('contenido').innerHTML = `<table><thead><tr>
+      <th>Comprobante</th><th>Fecha</th><th>Cliente</th><th>Mercado</th>
+      <th class="num">SKU</th><th class="num">Unidades</th><th class="num">Total</th><th>Fotos</th><th></th>
+    </tr></thead><tbody>${B.map(b => `
+      <tr>
+        <td><b>${esc(b.SERIE)}-${esc(b.NUMERO)}</b></td>
+        <td>${esc(b.FECHA_BOLETA)}</td>
+        <td>${esc(b.CLIENTE)}</td>
+        <td>${esc(b.MERCADO)}</td>
+        <td class="num">${num(b.SKUS)}</td>
+        <td class="num">${num(b.UNIDADES)}</td>
+        <td class="num"><b>${soles(b.TOTAL)}</b></td>
+        <td>${miniaturas([[b.FOTO_FECHA,'Fecha'],[b.FOTO_PRODUCTOS,'Productos'],[b.FOTO_COMPLETA,'Boleta completa']])}</td>
+        <td><button class="btn claro" style="background:var(--verde-suave); color:var(--tinta)" data-visita="${esc(b.ID_VISITA)}">Ver visita</button></td>
+      </tr>`).join('')}</tbody></table>`;
+  document.querySelectorAll('[data-visita]').forEach(b => b.onclick = () => { seleccion = b.dataset.visita; panelDetalle(seleccion); });
+  conectarLupa();
+}
+
+/* ---- Motivos ---- */
+function tablaMotivos(){
+  const M = (D.modulos||[]).filter(pasa).filter(m => m.ESTADO === 'NO_RELEVADO');
+  if(!M.length) return vacio('Ningún módulo quedó sin relevar. Cumplimiento completo en el periodo.');
+  const conteo = {};
+  M.forEach(m => { const k = m.MODULO + '||' + m.MOTIVO; conteo[k] = (conteo[k]||0) + 1; });
+  const resumen = Object.entries(conteo).sort((a,b) => b[1]-a[1]);
+  $('contenido').innerHTML = `<table><thead><tr><th>Módulo</th><th>Motivo</th><th class="num">Casos</th></tr></thead>
+    <tbody>${resumen.map(([k,n]) => { const [mod,mot] = k.split('||');
+      return `<tr><td>${esc(mod)}</td><td>${esc(mot)}</td><td class="num"><b>${n}</b></td></tr>`; }).join('')}</tbody></table>
+    <table style="border-top:8px solid var(--papel)"><thead><tr>
+      <th>Fecha</th><th>Cliente</th><th>Módulo</th><th>Motivo</th><th>Mercaderista</th></tr></thead>
+    <tbody>${M.map(m => `<tr><td>${esc(m.FECHA)}</td><td>${esc(m.CLIENTE)}</td>
+      <td>${esc(m.MODULO)}</td><td>${esc(m.MOTIVO)}</td><td>${esc(m.MERCADERISTA)}</td></tr>`).join('')}</tbody></table>`;
+}
+
+function vacio(t){ $('contenido').innerHTML = '<div class="vacio">' + esc(t) + '</div>'; }
+
+function miniaturas(lista){
+  const items = lista.filter(x => foto(x[0]));
+  if(!items.length) return '<span class="sinfoto">—</span>';
+  return '<div class="miniaturas">' + items.map(x =>
+    `<img src="${foto(x[0],200)}" alt="${esc(x[1])}" data-grande="${foto(x[0],1600)}" data-orig="${esc(x[0])}" loading="lazy">`).join('') + '</div>';
+}
+
+/* ---- Detalle de una visita ---- */
+function panelDetalle(id){
+  const v = (D.visitas||[]).find(x => x.ID_VISITA === id);
+  if(!v){ seleccion = null; return; }
+  const R = (D.relevos||[]).filter(r => r.ID_VISITA === id);
+  const B = (D.boletas||[]).filter(b => b.ID_VISITA === id);
+  const M = (D.modulos||[]).filter(m => m.ID_VISITA === id);
+
+  const bloque = (titulo, tipo) => {
+    const filas = R.filter(r => r.TIPO_RELEVO === tipo);
+    const mod = M.find(m => m.MODULO === tipo);
+    if(mod && mod.ESTADO === 'NO_RELEVADO')
+      return `<section><h3>${titulo}</h3><span class="eti no">No relevado</span>
+        <p style="margin:10px 0 0; color:var(--gris)">${esc(mod.MOTIVO)}</p></section>`;
+    if(!filas.length) return `<section><h3>${titulo}</h3><p style="color:var(--gris); margin:0">Sin registro.</p></section>`;
+    return `<section><h3>${titulo} — ${filas.length} SKU · ${num(filas.reduce((t,f)=>t+(Number(f.UNIDADES)||0),0))} unidades</h3>
+      <table>${filas.sort((a,b)=>(Number(a.UNIDADES)||0)-(Number(b.UNIDADES)||0)).map(f => `
+        <tr><td>${f.RELEVANCIA==='MANDATORIO'?'<span class="eti m">M</span> ':''}${esc(f.DESCRIPCION)}
+          <br><small style="color:var(--gris)">${esc(f.COD_SKU)}</small></td>
+          <td class="num"><b>${num(f.UNIDADES)}</b>
+          ${Number(f.UNIDADES)===0 ? '<br><span class="eti mal">Quiebre</span>' : ''}</td></tr>`).join('')}</table></section>`;
+  };
+
+  const fotos = [[v.FOTO_ALMACEN,'Panorámica de almacén'],[v.FOTO_EXHIBICION,'Panorámica de exhibición']]
+    .concat(B.flatMap(b => [[b.FOTO_FECHA, b.SERIE+'-'+b.NUMERO+' · fecha'],
+      [b.FOTO_PRODUCTOS, b.SERIE+'-'+b.NUMERO+' · productos'],
+      [b.FOTO_COMPLETA, b.SERIE+'-'+b.NUMERO+' · completa']]))
+    .filter(f => foto(f[0]));
+
+  const div = document.createElement('div');
+  div.className = 'fondo'; div.id = 'fondo';
+  div.innerHTML = `<div class="panel" style="position:relative">
+    <button class="cerrar" id="cerrar">×</button>
+    <h2>${esc(v.CLIENTE)}</h2>
+    <p class="sub">${esc(v.COD_CLIENTE)} · ${esc(v.MERCADO)} · ${esc(v.FECHA)} ${esc(String(v.HORA).slice(0,5))} · ${esc(v.MERCADERISTA)}
+      ${v.GEO ? ' · <a href="https://www.google.com/maps?q='+esc(v.GEO)+'" target="_blank" rel="noopener">ubicación</a>' : ''}</p>
+
+    ${v.OBSERVACIONES ? `<section><h3>Observaciones del mercaderista</h3><p style="margin:0">${esc(v.OBSERVACIONES)}</p></section>` : ''}
+    ${bloque('Stock de almacén','ALMACEN')}
+    ${bloque('Stock de exhibición','EXHIBICION')}
+
+    <section><h3>Boletas</h3>
+      ${B.length ? B.map(b => `<div style="border-bottom:1px solid var(--linea); padding-bottom:12px; margin-bottom:12px">
+          <b>${esc(b.SERIE)}-${esc(b.NUMERO)}</b> · ${esc(b.FECHA_BOLETA)} · <b>${soles(b.TOTAL)}</b>
+          <table>${R.filter(r => r.ID_BOLETA === b.ID_BOLETA).map(r => `
+            <tr><td>${esc(r.DESCRIPCION)}<br><small style="color:var(--gris)">${esc(r.COD_SKU)}</small></td>
+              <td class="num">${num(r.UNIDADES)} × ${soles(r.PRECIO_UNIT)}</td>
+              <td class="num"><b>${soles(r.VALOR)}</b></td></tr>`).join('')}</table>
+        </div>`).join('')
+        : (M.find(m => m.MODULO==='BOLETA' && m.ESTADO==='NO_RELEVADO')
+            ? '<span class="eti no">No relevado</span><p style="margin:10px 0 0; color:var(--gris)">'+esc(M.find(m=>m.MODULO==='BOLETA').MOTIVO)+'</p>'
+            : '<p style="color:var(--gris); margin:0">Sin boletas.</p>')}
+    </section>
+
+    <section><h3>Fotos (${fotos.length})</h3>
+      ${fotos.length ? '<div class="galeria">' + fotos.map(f => `<figure>
+        <img src="${foto(f[0],400)}" data-grande="${foto(f[0],1600)}" data-orig="${esc(f[0])}" alt="${esc(f[1])}" loading="lazy">
+        <figcaption>${esc(f[1])}</figcaption></figure>`).join('') + '</div>'
+        : '<p style="color:var(--gris); margin:0">Sin fotos registradas.</p>'}
+    </section></div>`;
+
+  document.getElementById('fondo')?.remove();
+  document.body.appendChild(div);
+  document.body.style.overflow = 'hidden';
+  const cerrar = () => { div.remove(); seleccion = null; document.body.style.overflow = ''; };
+  $('cerrar').onclick = cerrar;
+  div.onclick = e => { if(e.target === div) cerrar(); };
+  conectarLupa();
+}
+
+/* ---- Visor de fotos ---- */
+function conectarLupa(){
+  document.querySelectorAll('img[data-grande]').forEach(img => img.onclick = e => {
+    e.stopPropagation();
+    const cap = document.createElement('div');
+    cap.className = 'lupa';
+    cap.innerHTML = `<img src="${img.dataset.grande}" alt="${img.alt}">
+      <a href="${img.dataset.orig}" target="_blank" rel="noopener">Abrir original en Drive</a>`;
+    cap.onclick = () => cap.remove();
+    document.body.appendChild(cap);
+  });
+}
+
+/* ============ Arranque ============ */
+$('btnRefrescar').onclick = () => cargar();
+$('periodo').onchange = () => cargar();
+$('fMercado').onchange = () => pintar();
+$('fMerc').onchange = () => pintar();
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ document.querySelector('.lupa')?.remove(); document.getElementById('fondo')?.remove(); seleccion = null; document.body.style.overflow=''; } });
+
+if(clave) cargar(); else pintarAcceso();
+setInterval(() => { if(clave && !document.hidden) cargar(true); }, REFRESCO_MS);
+</script>
+</body>
+</html>
